@@ -1,213 +1,187 @@
---// DeepSearch v8 - Expanded Final Version
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+--// DeepSearch v8 - LinoriaLib Version
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/Library.lua"))()
+local ThemeManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/addons/ThemeManager.lua"))()
 
-local Window = Rayfield:CreateWindow({
-    Name = "DeepSearch v8",
-    LoadingTitle = "DeepSearch",
-    LoadingSubtitle = "Advanced Game Scanner",
+local Window = Library:CreateWindow({
+    Title = 'DeepSearch v8',
+    Center = true,
+    AutoShow = true,
+    TabPadding = 8,
+    MenuAccentColor = Color3.fromRGB(180, 100, 255)
 })
 
 -- Tabs
-local MainTab = Window:CreateTab("Main", 4483362458)
-local ScanTab = Window:CreateTab("Scanning", 4483362458)
-local AdvancedTab = Window:CreateTab("Advanced", 4483362458)
-local SettingsTab = Window:CreateTab("Settings", 4483362458)
+local Tabs = {
+    Main = Window:AddTab('Main'),
+    Logs = Window:AddTab('Logs'),
+    Settings = Window:AddTab('Settings'),
+}
 
 -- Variables
 local perfMode = "normal"
 local autoSave = true
+local currentLogs = {}
 local WORDBANK_URL = "https://raw.githubusercontent.com/TunaCANNN/DeepSearchV8/refs/heads/main/wordbank.txt"
 
--- ==================== CORE FUNCTIONS ====================
+-- Log Label (for Logs tab)
+local LogLabel = Tabs.Logs:AddLabel("No logs yet.")
+
+local function addLog(text)
+    local timestamp = os.date("%H:%M:%S")
+    local line = "[" .. timestamp .. "] " .. text
+    
+    table.insert(currentLogs, line)
+    
+    if #currentLogs > 60 then
+        table.remove(currentLogs, 1)
+    end
+    
+    LogLabel:SetValue(table.concat(currentLogs, "\n"))
+end
+
+-- WordBank Loader
 local function loadWordBank()
     local success, data = pcall(function()
         return game:HttpGet(WORDBANK_URL)
     end)
 
-    local keywords = {"Card", "Deck", "Hand", "Board", "Loot", "Shop", "Buy", "Merge", "Upgrade", "Mining", "Pickaxe", "Holder", "Sell", "Chest", "Prompt"}
-
     if success and data then
-        Rayfield:Notify({Title = "GitHub", Content = "Word bank loaded from GitHub", Duration = 3})
+        local keywords = {}
         for line in string.gmatch(data, "[^\r\n]+") do
-            if line ~= "" and not table.find(keywords, line) then
+            if line ~= "" then
                 table.insert(keywords, line)
             end
         end
+        addLog("Word bank loaded from GitHub (" .. #keywords .. " words)")
+        return keywords
     else
-        Rayfield:Notify({Title = "GitHub", Content = "Failed to load word bank", Duration = 4})
+        addLog("Failed to load word bank from GitHub!")
+        return {}
     end
-    return keywords
 end
 
-local function scanRemotes()
-    print("\n[REMOTES]")
-    local count = 0
-    for _, v in ipairs(game:GetDescendants()) do
-        if v:IsA("RemoteEvent") or v:IsA("RemoteFunction") then
-            print("→ " .. v:GetFullName())
-            count += 1
-        end
-    end
-    print("[Remotes] Found: " .. count)
-end
+-- Scan Function (Uses only WordBank)
+local function runScan(mode)
+    addLog("Starting " .. mode .. " scan...")
 
-local function scanImportantData(keywords)
-    print("\n[IMPORTANT DATA]")
-    local count = 0
+    local keywords = loadWordBank()
+
+    if #keywords == 0 then
+        addLog("No keywords found. Scan cancelled.")
+        return
+    end
+
+    addLog("Scanning for matches...")
+
     for _, v in ipairs(game:GetDescendants()) do
         if perfMode == "light" and math.random() > 0.5 then continue end
 
         for _, kw in ipairs(keywords) do
             if string.find(v.Name, kw) and not string.find(v:GetFullName(), "CoreGui") then
-                print("→ " .. v:GetFullName() .. " [" .. v.ClassName .. "]")
-                count += 1
+                addLog("→ " .. v:GetFullName() .. " [" .. v.ClassName .. "]")
                 break
             end
         end
     end
-    print("[Data] Found: " .. count .. " matches")
-end
 
-local function scanPlayerData()
-    print("\n[PLAYER DATA]")
-    for _, v in ipairs(player:GetDescendants()) do
-        if v:IsA("Folder") or v:IsA("ValueBase") then
-            local name = v.Name:lower()
-            if string.find(name, "card") or string.find(name, "deck") or string.find(name, "coin") or string.find(name, "gem") or string.find(name, "money") then
-                print("→ " .. v:GetFullName())
-            end
-        end
-    end
-end
-
-local function runFullScan()
-    local keywords = loadWordBank()
-    print("\n[DeepSearch] Starting Full Scan...")
-
-    scanRemotes()
-    scanImportantData(keywords)
-    scanPlayerData()
-
-    print("\n[SCAN COMPLETE]")
+    addLog("Scan complete.")
 
     if autoSave and writefile then
         local name = "DeepSearch_" .. os.date("%Y%m%d_%H%M%S") .. ".txt"
-        writefile(name, "DeepSearch Log - " .. os.date())
-        Rayfield:Notify({Title = "Saved", Content = "Log saved as " .. name, Duration = 4})
+        writefile(name, table.concat(currentLogs, "\n"))
+        addLog("Log saved: " .. name)
     end
 end
 
 -- ==================== MAIN TAB ====================
-MainTab:CreateSection("Quick Scans")
+Tabs.Main:AddLeftGroupbox('Quick Scans')
 
-MainTab:CreateButton({
-    Name = "Quick Scan",
-    Callback = function()
-        Rayfield:Notify({Title = "Scan", Content = "Quick scan started", Duration = 2})
-        runFullScan()
+Tabs.Main:AddButton({
+    Text = 'Quick Scan',
+    Func = function()
+        runScan("quick")
     end,
 })
 
-MainTab:CreateButton({
-    Name = "Deep Scan",
-    Callback = function()
-        Rayfield:Notify({Title = "Scan", Content = "Deep scan started", Duration = 2})
-        runFullScan()
+Tabs.Main:AddButton({
+    Text = 'Deep Scan',
+    Func = function()
+        runScan("deep")
     end,
 })
 
-MainTab:CreateButton({
-    Name = "Full Aggressive Scan",
-    Callback = function()
-        Rayfield:Notify({Title = "Scan", Content = "Full scan started", Duration = 2})
-        runFullScan()
+Tabs.Main:AddButton({
+    Text = 'Full Scan',
+    Func = function()
+        runScan("full")
     end,
 })
 
-MainTab:CreateSection("GitHub")
+Tabs.Main:AddLeftGroupbox('GitHub')
 
-MainTab:CreateButton({
-    Name = "Reload Word Bank",
-    Callback = function()
+Tabs.Main:AddButton({
+    Text = 'Reload Word Bank',
+    Func = function()
         loadWordBank()
     end,
 })
 
--- ==================== SCANNING TAB ====================
-ScanTab:CreateSection("Scan Categories")
+-- ==================== LOGS TAB ====================
+Tabs.Logs:AddLeftGroupbox('Log Controls')
 
-ScanTab:CreateButton({
-    Name = "Scan Only Remotes",
-    Callback = function()
-        scanRemotes()
-        Rayfield:Notify({Title = "Scan", Content = "Remote scan complete", Duration = 2})
+Tabs.Logs:AddButton({
+    Text = 'Copy All Logs',
+    Func = function()
+        if setclipboard then
+            setclipboard(table.concat(currentLogs, "\n"))
+            Library:Notify('Logs copied to clipboard', 3)
+        else
+            Library:Notify('setclipboard not supported', 3)
+        end
     end,
 })
 
-ScanTab:CreateButton({
-    Name = "Scan Important Data",
-    Callback = function()
-        local keywords = loadWordBank()
-        scanImportantData(keywords)
-        Rayfield:Notify({Title = "Scan", Content = "Data scan complete", Duration = 2})
+Tabs.Logs:AddButton({
+    Text = 'Clear Logs',
+    Func = function()
+        currentLogs = {}
+        LogLabel:SetValue("Logs cleared.")
     end,
 })
 
-ScanTab:CreateButton({
-    Name = "Scan Player Data",
-    Callback = function()
-        scanPlayerData()
-        Rayfield:Notify({Title = "Scan", Content = "Player data scan complete", Duration = 2})
-    end,
-})
+-- ==================== SETTINGS TAB ====================
+Tabs.Settings:AddLeftGroupbox('General')
 
--- ==================== ADVANCED TAB ====================
-AdvancedTab:CreateSection("Performance & Automation")
-
-AdvancedTab:CreateToggle({
-    Name = "Performance Mode (Faster)",
-    CurrentValue = false,
-    Callback = function(Value)
-        perfMode = Value and "light" or "normal"
-        Rayfield:Notify({Title = "Performance", Content = "Mode: " .. perfMode, Duration = 2})
-    end,
-})
-
-AdvancedTab:CreateToggle({
-    Name = "Auto Save Logs",
-    CurrentValue = true,
+Tabs.Settings:AddToggle('AutoSave', {
+    Text = 'Auto Save Logs',
+    Default = true,
     Callback = function(Value)
         autoSave = Value
     end,
 })
 
-AdvancedTab:CreateButton({
-    Name = "Manual Save Log",
-    Callback = function()
+Tabs.Settings:AddToggle('PerfMode', {
+    Text = 'Performance Mode',
+    Default = false,
+    Callback = function(Value)
+        perfMode = Value and "light" or "normal"
+    end,
+})
+
+Tabs.Settings:AddButton({
+    Text = 'Manual Save Log',
+    Func = function()
         if writefile then
             local name = "DeepSearch_Manual_" .. os.date("%Y%m%d_%H%M%S") .. ".txt"
-            writefile(name, "Manual Log - " .. os.date())
-            Rayfield:Notify({Title = "Saved", Content = "Log saved successfully", Duration = 3})
+            writefile(name, table.concat(currentLogs, "\n"))
+            Library:Notify('Log saved as ' .. name, 3)
         end
     end,
 })
 
--- ==================== SETTINGS TAB ====================
-SettingsTab:CreateSection("General")
+-- Theme Manager (Optional but nice)
+ThemeManager:SetLibrary(Library)
+ThemeManager:ApplyToTab(Tabs.Settings)
 
-SettingsTab:CreateToggle({
-    Name = "Enable Notifications",
-    CurrentValue = true,
-    Callback = function(Value)
-        -- Can expand later
-    end,
-})
-
-SettingsTab:CreateButton({
-    Name = "Reset Settings",
-    Callback = function()
-        Rayfield:Notify({Title = "Reset", Content = "Settings reset to default", Duration = 3})
-    end,
-})
-
-print("[DeepSearch v8] Expanded Rayfield version loaded.")
+addLog("DeepSearch v8 (LinoriaLib) loaded successfully.")
+addLog("All scans now use only the GitHub word bank.")
