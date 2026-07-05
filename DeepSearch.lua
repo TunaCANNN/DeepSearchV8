@@ -1,29 +1,33 @@
---// DeepSearch v8
+--// DeepSearch v8 - Clean Final Version
 local player = game.Players.LocalPlayer
+
+-- Create GUI
 local gui = Instance.new("ScreenGui")
 gui.Name = "DeepSearch"
 gui.ResetOnSpawn = false
 gui.Parent = player:WaitForChild("PlayerGui")
 
 local main = Instance.new("Frame")
-main.Size = UDim2.new(0, 920, 0, 640)
-main.Position = UDim2.new(0.5, -460, 0.5, -320)
+main.Size = UDim2.new(0, 900, 0, 620)
+main.Position = UDim2.new(0.5, -450, 0.5, -310)
 main.BackgroundColor3 = Color3.fromRGB(10, 10, 16)
 main.BorderSizePixel = 0
 main.Parent = gui
 Instance.new("UICorner", main).CornerRadius = UDim.new(0, 12)
 
+-- Title
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 30)
 title.BackgroundColor3 = Color3.fromRGB(18, 8, 32)
-title.Text = "DeepSearch v8  •  Terminal + GitHub WordBank"
+title.Text = "DeepSearch v8  •  Terminal"
 title.TextColor3 = Color3.fromRGB(180, 100, 255)
 title.TextScaled = true
 title.Font = Enum.Font.Code
 title.Parent = main
 
+-- Console
 local console = Instance.new("ScrollingFrame")
-console.Size = UDim2.new(1, -20, 1, -115)
+console.Size = UDim2.new(1, -20, 1, -110)
 console.Position = UDim2.new(0, 10, 0, 38)
 console.BackgroundColor3 = Color3.fromRGB(6, 6, 10)
 console.ScrollBarThickness = 6
@@ -46,32 +50,44 @@ local perfMode = "normal"
 local function log(text, color)
     color = color or Color3.fromRGB(180, 100, 255)
     local ts = os.date("%H:%M:%S")
-    table.insert(logs, "["..ts.."] " .. text)
+    table.insert(logs, "[" .. ts .. "] " .. text)
     if #logs > 70 then table.remove(logs, 1) end
     output.Text = table.concat(logs, "\n")
     console.CanvasPosition = Vector2.new(0, console.AbsoluteCanvasSize.Y)
 end
 
+-- Command Bar
 local cmdBar = Instance.new("TextBox")
 cmdBar.Size = UDim2.new(1, -20, 0, 26)
 cmdBar.Position = UDim2.new(0, 10, 1, -30)
 cmdBar.BackgroundColor3 = Color3.fromRGB(12, 8, 20)
 cmdBar.TextColor3 = Color3.fromRGB(200, 150, 255)
-cmdBar.PlaceholderText = "Commands: scan | deep | full | github | perf | help | clear | exit"
+cmdBar.PlaceholderText = "Commands: scan | deep | full | perf | help | clear | exit"
 cmdBar.Font = Enum.Font.Code
 cmdBar.TextSize = 13
 cmdBar.ClearTextOnFocus = false
 cmdBar.Parent = main
 
--- WordBank
-local GITHUB_WORD_BANK = "https://github.com/TunaCANNN/DeepSearchV8/blob/main/wordbank.txt"
+-- Status Bar
+local status = Instance.new("TextLabel")
+status.Size = UDim2.new(1, 0, 0, 22)
+status.Position = UDim2.new(0, 0, 1, -52)
+status.BackgroundColor3 = Color3.fromRGB(15, 8, 28)
+status.TextColor3 = Color3.fromRGB(150, 150, 200)
+status.Text = "Mode: Normal  |  AutoSave: ON"
+status.TextScaled = true
+status.Font = Enum.Font.Code
+status.Parent = main
+
+-- Your Word Bank URL
+local WORDBANK_URL = "https://raw.githubusercontent.com/TunaCANNN/DeepSearchV8/refs/heads/main/wordbank.txt"
 
 local function loadWordBank()
     local success, data = pcall(function()
-        return game:HttpGet(GITHUB_WORD_BANK)
+        return game:HttpGet(WORDBANK_URL)
     end)
 
-    local defaultKeywords = {
+    local keywords = {
         "Card", "Deck", "Hand", "Board", "Loot", "Shop", "Buy", "Merge", 
         "Upgrade", "Mining", "Pickaxe", "Holder", "Sell", "Chest", "Prompt",
         "Tool", "Backpack", "Plot", "Base", "Owner", "Coin", "Gem"
@@ -80,17 +96,18 @@ local function loadWordBank()
     if success and data then
         log("[GitHub] Word bank loaded successfully", Color3.fromRGB(100, 255, 150))
         for line in string.gmatch(data, "[^\r\n]+") do
-            if line ~= "" and not table.find(defaultKeywords, line) then
-                table.insert(defaultKeywords, line)
+            if line ~= "" and not table.find(keywords, line) then
+                table.insert(keywords, line)
             end
         end
     else
-        log("[GitHub] Failed to load word bank. Using defaults.", Color3.fromRGB(255, 150, 100))
+        log("[GitHub] Failed to load word bank. Using default keywords.", Color3.fromRGB(255, 150, 100))
     end
 
-    return defaultKeywords
+    return keywords
 end
 
+-- Main Scan Function
 local function runScan(mode)
     log("\n[SCAN STARTED] Mode: " .. mode:upper(), Color3.fromRGB(255, 200, 100))
 
@@ -134,7 +151,7 @@ local function runScan(mode)
     end
 end
 
--- Commands
+-- Command Handler
 cmdBar.FocusLost:Connect(function(enter)
     if not enter then return end
     local input = string.lower(cmdBar.Text)
@@ -148,8 +165,6 @@ cmdBar.FocusLost:Connect(function(enter)
     elseif input == "full" then
         perfMode = "aggressive"
         runScan("full")
-    elseif input == "github" then
-        loadWordBank()
     elseif input == "perf" then
         perfMode = (perfMode == "normal") and "light" or "normal"
         log("Performance Mode: " .. perfMode)
@@ -158,7 +173,6 @@ cmdBar.FocusLost:Connect(function(enter)
         log("scan / quick   → Quick scan")
         log("deep           → Deep scan")
         log("full           → Full aggressive scan")
-        log("github         → Reload GitHub word bank")
         log("perf           → Toggle performance mode")
         log("clear          → Clear console")
         log("exit           → Close DeepSearch")
@@ -189,14 +203,12 @@ end
 makeBtn("Quick", 10, function() runScan("quick") end)
 makeBtn("Deep", 98, function() runScan("deep") end)
 makeBtn("Full", 186, function() runScan("full") end)
-makeBtn("GitHub", 274, function() loadWordBank() end)
-makeBtn("Perf", 362, function()
+makeBtn("Perf", 274, function()
     perfMode = (perfMode == "normal") and "light" or "normal"
     log("Performance Mode: " .. perfMode)
 end)
-makeBtn("Clear", 450, function() logs = {} output.Text = "" end)
-makeBtn("Exit", 538, function() gui:Destroy() end)
+makeBtn("Clear", 362, function() logs = {} output.Text = "" end)
+makeBtn("Exit", 450, function() gui:Destroy() end)
 
-log("[DeepSearch v8] Loaded.")
-log("Make sure to change GITHUB_WORD_BANK to your own raw GitHub URL.")
-log("The bigger your wordbank.txt is, the more it will find.")
+log("[DeepSearch v8] Clean version loaded.")
+log("Word bank is being loaded from your GitHub repo.")
