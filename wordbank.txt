@@ -11,3 +11,4 @@ ProximityPrompt ClickDetector TouchInterest
 Leaderstats Stats Data Folder Value IntValue NumberValue StringValue
 AutoLoot AutoMine AutoBuy AutoMerge AutoSell
 OreMult IncomeMult MoneyMult Collection CollectionFrame
+Gun Recoil ReloadTime Reload Money Spread
