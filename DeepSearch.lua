@@ -1,5 +1,6 @@
---// DeepSearch v8 - Clean Terminal + Real Scanning
+--// DeepSearch v8 - Terminal UI + JSON WordBank
 local player = game.Players.LocalPlayer
+local HttpService = game:GetService("HttpService")
 local TweenService = game:GetService("TweenService")
 
 local gui = Instance.new("ScreenGui")
@@ -25,7 +26,7 @@ titleBar.Parent = main
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 1, 0)
 title.BackgroundTransparency = 1
-title.Text = "DeepSearch v8  •  Terminal"
+title.Text = "DeepSearch v8  •  Terminal + JSON WordBank"
 title.TextColor3 = Color3.fromRGB(180, 100, 255)
 title.TextScaled = true
 title.Font = Enum.Font.Code
@@ -70,8 +71,8 @@ local function log(text)
     console.CanvasPosition = Vector2.new(0, console.AbsoluteCanvasSize.Y)
 end
 
--- GitHub WordBank
-local WORDBANK_URL = "https://raw.githubusercontent.com/TunaCANNN/DeepSearchV8/refs/heads/main/wordbank.txt"
+-- Load WordBank from JSON (Dictionary)
+local WORDBANK_URL = "https://raw.githubusercontent.com/TunaCANNN/DeepSearchV8/refs/heads/main/wordbank.json"
 
 local function loadWordBank()
     local success, data = pcall(function()
@@ -79,12 +80,15 @@ local function loadWordBank()
     end)
 
     if success and data then
+        local decoded = HttpService:JSONDecode(data)
         local keywords = {}
-        for line in string.gmatch(data, "[^\r\n]+") do
-            if line ~= "" then
-                table.insert(keywords, line)
+
+        for category, list in pairs(decoded) do
+            for _, word in ipairs(list) do
+                table.insert(keywords, word)
             end
         end
+
         log("Word bank loaded from GitHub (" .. #keywords .. " words)")
         return keywords
     else
@@ -93,7 +97,7 @@ local function loadWordBank()
     end
 end
 
--- Scanning Logic
+-- Scanning Logic (Uses only JSON WordBank)
 local function runScan(mode)
     log("Starting " .. mode .. " scan...")
 
@@ -103,22 +107,21 @@ local function runScan(mode)
         return
     end
 
-    local scanned = 0
+    local found = 0
 
     for _, v in ipairs(game:GetDescendants()) do
-        -- Performance Mode skips some objects
         if perfMode == "light" and math.random() > 0.5 then continue end
 
         for _, kw in ipairs(keywords) do
             if string.find(v.Name, kw) and not string.find(v:GetFullName(), "CoreGui") then
                 log("→ " .. v:GetFullName() .. " [" .. v.ClassName .. "]")
-                scanned += 1
+                found += 1
                 break
             end
         end
     end
 
-    log("Scan complete. Found " .. scanned .. " matches.")
+    log("Scan complete. Found " .. found .. " matches.")
 
     if autoSave and writefile then
         local name = "DeepSearch_" .. os.date("%Y%m%d_%H%M%S") .. ".txt"
@@ -189,5 +192,5 @@ createButton("Clear Logs", y, function()
 end); y += 38
 createButton("Exit", y, function() gui:Destroy() end)
 
-log("DeepSearch v8 - Clean Terminal UI loaded.")
-log("Scanning now uses only your GitHub word bank.")
+log("DeepSearch v8 loaded with JSON WordBank support.")
+log("Scanning now uses your full dictionary word bank.")
