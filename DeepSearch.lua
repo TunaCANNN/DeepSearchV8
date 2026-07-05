@@ -1,13 +1,10 @@
---// DeepSearch v8 - LinoriaLib Version
+--// DeepSearch v8 - LinoriaLib (Fixed)
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/Library.lua"))()
-local ThemeManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/addons/ThemeManager.lua"))()
 
 local Window = Library:CreateWindow({
     Title = 'DeepSearch v8',
     Center = true,
     AutoShow = true,
-    TabPadding = 8,
-    MenuAccentColor = Color3.fromRGB(180, 100, 255)
 })
 
 -- Tabs
@@ -23,23 +20,22 @@ local autoSave = true
 local currentLogs = {}
 local WORDBANK_URL = "https://raw.githubusercontent.com/TunaCANNN/DeepSearchV8/refs/heads/main/wordbank.txt"
 
--- Log Label (for Logs tab)
+-- Log Label
 local LogLabel = Tabs.Logs:AddLabel("No logs yet.")
 
 local function addLog(text)
     local timestamp = os.date("%H:%M:%S")
     local line = "[" .. timestamp .. "] " .. text
-    
     table.insert(currentLogs, line)
-    
+
     if #currentLogs > 60 then
         table.remove(currentLogs, 1)
     end
-    
+
     LogLabel:SetValue(table.concat(currentLogs, "\n"))
 end
 
--- WordBank Loader
+-- Load WordBank (Only from GitHub)
 local function loadWordBank()
     local success, data = pcall(function()
         return game:HttpGet(WORDBANK_URL)
@@ -52,7 +48,7 @@ local function loadWordBank()
                 table.insert(keywords, line)
             end
         end
-        addLog("Word bank loaded from GitHub (" .. #keywords .. " words)")
+        addLog("Word bank loaded (" .. #keywords .. " words)")
         return keywords
     else
         addLog("Failed to load word bank from GitHub!")
@@ -60,18 +56,18 @@ local function loadWordBank()
     end
 end
 
--- Scan Function (Uses only WordBank)
+-- Scan Function (Uses ONLY WordBank)
 local function runScan(mode)
     addLog("Starting " .. mode .. " scan...")
 
     local keywords = loadWordBank()
 
     if #keywords == 0 then
-        addLog("No keywords found. Scan cancelled.")
+        addLog("No keywords loaded. Scan cancelled.")
         return
     end
 
-    addLog("Scanning for matches...")
+    addLog("Scanning...")
 
     for _, v in ipairs(game:GetDescendants()) do
         if perfMode == "light" and math.random() > 0.5 then continue end
@@ -94,94 +90,93 @@ local function runScan(mode)
 end
 
 -- ==================== MAIN TAB ====================
-Tabs.Main:AddLeftGroupbox('Quick Scans')
+Tabs.Main:AddLeftGroupbox("Quick Scans")
 
 Tabs.Main:AddButton({
-    Text = 'Quick Scan',
+    Text = "Quick Scan",
     Func = function()
         runScan("quick")
-    end,
+    end
 })
 
 Tabs.Main:AddButton({
-    Text = 'Deep Scan',
+    Text = "Deep Scan",
     Func = function()
         runScan("deep")
-    end,
+    end
 })
 
 Tabs.Main:AddButton({
-    Text = 'Full Scan',
+    Text = "Full Scan",
     Func = function()
         runScan("full")
-    end,
+    end
 })
 
-Tabs.Main:AddLeftGroupbox('GitHub')
+Tabs.Main:AddLeftGroupbox("GitHub")
 
 Tabs.Main:AddButton({
-    Text = 'Reload Word Bank',
+    Text = "Reload Word Bank",
     Func = function()
         loadWordBank()
-    end,
+    end
 })
 
 -- ==================== LOGS TAB ====================
-Tabs.Logs:AddLeftGroupbox('Log Controls')
+Tabs.Logs:AddLeftGroupbox("Log Controls")
 
 Tabs.Logs:AddButton({
-    Text = 'Copy All Logs',
+    Text = "Copy All Logs",
     Func = function()
         if setclipboard then
             setclipboard(table.concat(currentLogs, "\n"))
-            Library:Notify('Logs copied to clipboard', 3)
+            Library:Notify("Logs copied to clipboard", 3)
         else
-            Library:Notify('setclipboard not supported', 3)
+            Library:Notify("setclipboard not supported", 3)
         end
-    end,
+    end
 })
 
 Tabs.Logs:AddButton({
-    Text = 'Clear Logs',
+    Text = "Clear Logs",
     Func = function()
         currentLogs = {}
         LogLabel:SetValue("Logs cleared.")
-    end,
+    end
 })
 
 -- ==================== SETTINGS TAB ====================
-Tabs.Settings:AddLeftGroupbox('General')
+Tabs.Settings:AddLeftGroupbox("General Settings")
 
-Tabs.Settings:AddToggle('AutoSave', {
-    Text = 'Auto Save Logs',
+Tabs.Settings:AddToggle("AutoSave", {
+    Text = "Auto Save Logs",
     Default = true,
     Callback = function(Value)
         autoSave = Value
-    end,
+    end
 })
 
-Tabs.Settings:AddToggle('PerfMode', {
-    Text = 'Performance Mode',
+Tabs.Settings:AddToggle("PerfMode", {
+    Text = "Performance Mode",
     Default = false,
     Callback = function(Value)
         perfMode = Value and "light" or "normal"
-    end,
+    end
 })
 
 Tabs.Settings:AddButton({
-    Text = 'Manual Save Log',
+    Text = "Manual Save Log",
     Func = function()
         if writefile then
             local name = "DeepSearch_Manual_" .. os.date("%Y%m%d_%H%M%S") .. ".txt"
             writefile(name, table.concat(currentLogs, "\n"))
-            Library:Notify('Log saved as ' .. name, 3)
+            Library:Notify("Log saved as " .. name, 3)
         end
-    end,
+    end
 })
 
--- Theme Manager (Optional but nice)
-ThemeManager:SetLibrary(Library)
-ThemeManager:ApplyToTab(Tabs.Settings)
+-- Force select Main tab (important for LinoriaLib)
+Tabs.Main:Select()
 
-addLog("DeepSearch v8 (LinoriaLib) loaded successfully.")
-addLog("All scans now use only the GitHub word bank.")
+addLog("DeepSearch v8 (LinoriaLib) loaded.")
+addLog("Using only GitHub word bank for scanning.")
