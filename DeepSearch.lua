@@ -1,4 +1,4 @@
---// DeepSearch v8 - GitHub Word Bank Support
+--// DeepSearch v8
 local player = game.Players.LocalPlayer
 local gui = Instance.new("ScreenGui")
 gui.Name = "DeepSearch"
@@ -63,8 +63,8 @@ cmdBar.TextSize = 13
 cmdBar.ClearTextOnFocus = false
 cmdBar.Parent = main
 
--- Change this to your GitHub raw URL
-local GITHUB_WORD_BANK = "https://raw.githubusercontent.com/YOUR_USERNAME/DeepSearch-WordBank/main/wordbank.txt"
+-- WordBank
+local GITHUB_WORD_BANK = "https://github.com/TunaCANNN/DeepSearchV8/blob/main/wordbank.txt"
 
 local function loadWordBank()
     local success, data = pcall(function()
