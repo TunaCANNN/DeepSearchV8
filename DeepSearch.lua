@@ -1,24 +1,73 @@
---// DeepSearch v8 - Fusion + Copy Logs
-local Fusion = loadstring(game:HttpGet("https://raw.githubusercontent.com/dphfox/Fusion/main/src/init.lua"))()
+--// DeepSearch v8 - Clean Terminal + Real Scanning
+local player = game.Players.LocalPlayer
+local TweenService = game:GetService("TweenService")
 
-local New = Fusion.New
-local Value = Fusion.Value
-local Computed = Fusion.Computed
-local Children = Fusion.Children
-local OnEvent = Fusion.OnEvent
+local gui = Instance.new("ScreenGui")
+gui.Name = "DeepSearch"
+gui.ResetOnSpawn = false
+gui.Parent = player:WaitForChild("PlayerGui")
 
--- State
-local logs = Value({})
-local perfMode = Value("normal")
-local autoSave = Value(true)
+-- Main Window
+local main = Instance.new("Frame")
+main.Size = UDim2.new(0, 920, 0, 600)
+main.Position = UDim2.new(0.5, -460, 0.5, -300)
+main.BackgroundColor3 = Color3.fromRGB(12, 12, 18)
+main.BorderSizePixel = 0
+main.Parent = gui
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 10)
+
+-- Title Bar
+local titleBar = Instance.new("Frame")
+titleBar.Size = UDim2.new(1, 0, 0, 32)
+titleBar.BackgroundColor3 = Color3.fromRGB(18, 8, 32)
+titleBar.Parent = main
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 1, 0)
+title.BackgroundTransparency = 1
+title.Text = "DeepSearch v8  •  Terminal"
+title.TextColor3 = Color3.fromRGB(180, 100, 255)
+title.TextScaled = true
+title.Font = Enum.Font.Code
+title.Parent = titleBar
+
+-- Sidebar
+local sidebar = Instance.new("Frame")
+sidebar.Size = UDim2.new(0, 140, 1, -32)
+sidebar.Position = UDim2.new(0, 0, 0, 32)
+sidebar.BackgroundColor3 = Color3.fromRGB(15, 8, 25)
+sidebar.Parent = main
+
+-- Main Console
+local console = Instance.new("ScrollingFrame")
+console.Size = UDim2.new(1, -160, 1, -75)
+console.Position = UDim2.new(0, 150, 0, 40)
+console.BackgroundColor3 = Color3.fromRGB(8, 8, 12)
+console.ScrollBarThickness = 6
+console.Parent = main
+
+local output = Instance.new("TextLabel")
+output.Size = UDim2.new(1, -10, 1, 0)
+output.BackgroundTransparency = 1
+output.TextColor3 = Color3.fromRGB(180, 100, 255)
+output.TextXAlignment = Enum.TextXAlignment.Left
+output.TextYAlignment = Enum.TextYAlignment.Top
+output.Font = Enum.Font.Code
+output.TextSize = 13
+output.TextWrapped = true
+output.Parent = console
+
 local currentLogs = {}
+local perfMode = "normal"
+local autoSave = true
 
-local function addLog(text)
+local function log(text)
     local ts = os.date("%H:%M:%S")
     local line = "[" .. ts .. "] " .. text
     table.insert(currentLogs, line)
-    if #currentLogs > 70 then table.remove(currentLogs, 1) end
-    logs:set(currentLogs)
+    if #currentLogs > 65 then table.remove(currentLogs, 1) end
+    output.Text = table.concat(currentLogs, "\n")
+    console.CanvasPosition = Vector2.new(0, console.AbsoluteCanvasSize.Y)
 end
 
 -- GitHub WordBank
@@ -32,242 +81,113 @@ local function loadWordBank()
     if success and data then
         local keywords = {}
         for line in string.gmatch(data, "[^\r\n]+") do
-            if line ~= "" then table.insert(keywords, line) end
+            if line ~= "" then
+                table.insert(keywords, line)
+            end
         end
-        addLog("Word bank loaded from GitHub (" .. #keywords .. " words)")
+        log("Word bank loaded from GitHub (" .. #keywords .. " words)")
         return keywords
     else
-        addLog("Failed to load word bank from GitHub!")
+        log("Failed to load word bank from GitHub!")
         return {}
     end
 end
 
--- Scan Function
+-- Scanning Logic
 local function runScan(mode)
-    addLog("Starting " .. mode .. " scan...")
-    local keywords = loadWordBank()
+    log("Starting " .. mode .. " scan...")
 
+    local keywords = loadWordBank()
     if #keywords == 0 then
-        addLog("No keywords loaded.")
+        log("No keywords loaded. Scan cancelled.")
         return
     end
 
+    local scanned = 0
+
     for _, v in ipairs(game:GetDescendants()) do
-        if perfMode:get() == "light" and math.random() > 0.5 then continue end
+        -- Performance Mode skips some objects
+        if perfMode == "light" and math.random() > 0.5 then continue end
 
         for _, kw in ipairs(keywords) do
             if string.find(v.Name, kw) and not string.find(v:GetFullName(), "CoreGui") then
-                addLog("→ " .. v:GetFullName())
+                log("→ " .. v:GetFullName() .. " [" .. v.ClassName .. "]")
+                scanned += 1
                 break
             end
         end
     end
 
-    addLog("Scan complete.")
+    log("Scan complete. Found " .. scanned .. " matches.")
 
-    if autoSave:get() and writefile then
+    if autoSave and writefile then
         local name = "DeepSearch_" .. os.date("%Y%m%d_%H%M%S") .. ".txt"
         writefile(name, table.concat(currentLogs, "\n"))
-        addLog("Log saved: " .. name)
+        log("Log saved: " .. name)
     end
 end
 
--- Main GUI
-local screenGui = New "ScreenGui" {
-    Name = "DeepSearch",
-    ResetOnSpawn = false,
-    Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui"),
+-- Button Creator with Effects
+local function createButton(text, yPos, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, -12, 0, 32)
+    btn.Position = UDim2.new(0, 6, 0, yPos)
+    btn.BackgroundColor3 = Color3.fromRGB(25, 10, 42)
+    btn.TextColor3 = Color3.fromRGB(200, 150, 255)
+    btn.Text = text
+    btn.Font = Enum.Font.Code
+    btn.TextSize = 14
+    btn.Parent = sidebar
 
-    [Children] = {
-        New "Frame" {
-            Name = "MainWindow",
-            Size = UDim2.new(0, 980, 0, 640),
-            Position = UDim2.new(0.5, -490, 0.5, -320),
-            BackgroundColor3 = Color3.fromRGB(12, 12, 18),
-            BorderSizePixel = 0,
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
 
-            [Children] = {
-                -- Title Bar
-                New "Frame" {
-                    Size = UDim2.new(1, 0, 0, 34),
-                    BackgroundColor3 = Color3.fromRGB(18, 8, 32),
+    btn.MouseEnter:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.1), {
+            BackgroundColor3 = Color3.fromRGB(45, 15, 70)
+        }):Play()
+    end)
 
-                    [Children] = {
-                        New "TextLabel" {
-                            Size = UDim2.new(1, 0, 1, 0),
-                            BackgroundTransparency = 1,
-                            Text = "DeepSearch v8 - Fusion",
-                            TextColor3 = Color3.fromRGB(180, 100, 255),
-                            TextScaled = true,
-                            Font = Enum.Font.Code,
-                        }
-                    }
-                },
+    btn.MouseLeave:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.1), {
+            BackgroundColor3 = Color3.fromRGB(25, 10, 42)
+        }):Play()
+    end)
 
-                -- Sidebar
-                New "Frame" {
-                    Name = "Sidebar",
-                    Size = UDim2.new(0, 150, 1, -34),
-                    Position = UDim2.new(0, 0, 0, 34),
-                    BackgroundColor3 = Color3.fromRGB(15, 8, 25),
+    btn.MouseButton1Click:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.06), {
+            BackgroundColor3 = Color3.fromRGB(90, 30, 130)
+        }):Play()
+        task.delay(0.08, function()
+            TweenService:Create(btn, TweenInfo.new(0.1), {
+                BackgroundColor3 = Color3.fromRGB(45, 15, 70)
+            }):Play()
+        end)
+        callback()
+    end)
 
-                    [Children] = {
-                        -- Quick Scan
-                        New "TextButton" {
-                            Size = UDim2.new(1, -10, 0, 34),
-                            Position = UDim2.new(0, 5, 0, 10),
-                            BackgroundColor3 = Color3.fromRGB(30, 12, 50),
-                            Text = "Quick Scan",
-                            TextColor3 = Color3.fromRGB(200, 150, 255),
-                            Font = Enum.Font.Code,
-                            TextSize = 14,
-                            [OnEvent "MouseButton1Click"] = function() runScan("quick") end
-                        },
-                        -- Deep Scan
-                        New "TextButton" {
-                            Size = UDim2.new(1, -10, 0, 34),
-                            Position = UDim2.new(0, 5, 0, 50),
-                            BackgroundColor3 = Color3.fromRGB(30, 12, 50),
-                            Text = "Deep Scan",
-                            TextColor3 = Color3.fromRGB(200, 150, 255),
-                            Font = Enum.Font.Code,
-                            TextSize = 14,
-                            [OnEvent "MouseButton1Click"] = function() runScan("deep") end
-                        },
-                        -- Full Scan
-                        New "TextButton" {
-                            Size = UDim2.new(1, -10, 0, 34),
-                            Position = UDim2.new(0, 5, 0, 90),
-                            BackgroundColor3 = Color3.fromRGB(30, 12, 50),
-                            Text = "Full Scan",
-                            TextColor3 = Color3.fromRGB(200, 150, 255),
-                            Font = Enum.Font.Code,
-                            TextSize = 14,
-                            [OnEvent "MouseButton1Click"] = function() runScan("full") end
-                        },
-                        -- Reload WordBank
-                        New "TextButton" {
-                            Size = UDim2.new(1, -10, 0, 34),
-                            Position = UDim2.new(0, 5, 0, 140),
-                            BackgroundColor3 = Color3.fromRGB(30, 12, 50),
-                            Text = "Reload WordBank",
-                            TextColor3 = Color3.fromRGB(200, 150, 255),
-                            Font = Enum.Font.Code,
-                            TextSize = 14,
-                            [OnEvent "MouseButton1Click"] = function() loadWordBank() end
-                        },
-                        -- Copy Logs
-                        New "TextButton" {
-                            Size = UDim2.new(1, -10, 0, 34),
-                            Position = UDim2.new(0, 5, 0, 180),
-                            BackgroundColor3 = Color3.fromRGB(30, 12, 50),
-                            Text = "Copy Logs",
-                            TextColor3 = Color3.fromRGB(200, 150, 255),
-                            Font = Enum.Font.Code,
-                            TextSize = 14,
-                            [OnEvent "MouseButton1Click"] = function()
-                                if setclipboard then
-                                    setclipboard(table.concat(currentLogs, "\n"))
-                                    addLog("Logs copied to clipboard")
-                                else
-                                    addLog("setclipboard not supported on this executor")
-                                end
-                            end
-                        },
-                        -- Clear Logs
-                        New "TextButton" {
-                            Size = UDim2.new(1, -10, 0, 34),
-                            Position = UDim2.new(0, 5, 0, 220),
-                            BackgroundColor3 = Color3.fromRGB(30, 12, 50),
-                            Text = "Clear Logs",
-                            TextColor3 = Color3.fromRGB(200, 150, 255),
-                            Font = Enum.Font.Code,
-                            TextSize = 14,
-                            [OnEvent "MouseButton1Click"] = function()
-                                currentLogs = {}
-                                logs:set({})
-                                addLog("Logs cleared")
-                            end
-                        },
-                        -- Exit
-                        New "TextButton" {
-                            Size = UDim2.new(1, -10, 0, 34),
-                            Position = UDim2.new(0, 5, 0, 260),
-                            BackgroundColor3 = Color3.fromRGB(60, 20, 30),
-                            Text = "Exit",
-                            TextColor3 = Color3.fromRGB(255, 150, 150),
-                            Font = Enum.Font.Code,
-                            TextSize = 14,
-                            [OnEvent "MouseButton1Click"] = function()
-                                script.Parent.Parent:Destroy()
-                            end
-                        }
-                    }
-                },
+    return btn
+end
 
-                -- Main Console
-                New "ScrollingFrame" {
-                    Name = "Console",
-                    Size = UDim2.new(1, -170, 1, -90),
-                    Position = UDim2.new(0, 160, 0, 42),
-                    BackgroundColor3 = Color3.fromRGB(8, 8, 12),
-                    ScrollBarThickness = 6,
+-- Sidebar Buttons
+local y = 10
+createButton("Quick Scan", y, function() runScan("quick") end); y += 38
+createButton("Deep Scan", y, function() runScan("deep") end); y += 38
+createButton("Full Scan", y, function() runScan("full") end); y += 38
+createButton("Reload WordBank", y, function() loadWordBank() end); y += 38
+createButton("Copy Logs", y, function()
+    if setclipboard then
+        setclipboard(table.concat(currentLogs, "\n"))
+        log("Logs copied to clipboard")
+    else
+        log("setclipboard not supported")
+    end
+end); y += 38
+createButton("Clear Logs", y, function()
+    currentLogs = {}
+    output.Text = ""
+    log("Logs cleared")
+end); y += 38
+createButton("Exit", y, function() gui:Destroy() end)
 
-                    [Children] = {
-                        New "TextLabel" {
-                            Name = "Output",
-                            Size = UDim2.new(1, -10, 1, 0),
-                            BackgroundTransparency = 1,
-                            TextColor3 = Color3.fromRGB(180, 100, 255),
-                            TextXAlignment = Enum.TextXAlignment.Left,
-                            TextYAlignment = Enum.TextYAlignment.Top,
-                            Font = Enum.Font.Code,
-                            TextSize = 13,
-                            TextWrapped = true,
-                            Text = Computed(function()
-                                return table.concat(logs:get(), "\n")
-                            end),
-                        }
-                    }
-                },
-
-                -- Command Bar
-                New "TextBox" {
-                    Name = "CommandBar",
-                    Size = UDim2.new(1, -170, 0, 28),
-                    Position = UDim2.new(0, 160, 1, -32),
-                    BackgroundColor3 = Color3.fromRGB(12, 8, 20),
-                    TextColor3 = Color3.fromRGB(200, 150, 255),
-                    PlaceholderText = "Type commands...",
-                    Font = Enum.Font.Code,
-                    TextSize = 14,
-                    ClearTextOnFocus = false,
-
-                    [OnEvent "FocusLost"] = function(enterPressed)
-                        if not enterPressed then return end
-                        local input = string.lower(script.Parent.CommandBar.Text)
-                        script.Parent.CommandBar.Text = ""
-
-                        if input == "scan" or input == "quick" then runScan("quick")
-                        elseif input == "deep" then runScan("deep")
-                        elseif input == "full" then runScan("full")
-                        elseif input == "perf" then
-                            perfMode:set(perfMode:get() == "normal" and "light" or "normal")
-                            addLog("Performance mode: " .. perfMode:get())
-                        elseif input == "clear" then
-                            currentLogs = {}
-                            logs:set({})
-                        elseif input == "exit" then
-                            script.Parent.Parent:Destroy()
-                        else
-                            addLog("Unknown command")
-                        end
-                    end
-                }
-            }
-        }
-    }
-}
-
-addLog("DeepSearch v8 (Fusion) loaded with Copy Logs button.")
-addLog("Using only GitHub word bank for scanning.")
+log("DeepSearch v8 - Clean Terminal UI loaded.")
+log("Scanning now uses only your GitHub word bank.")
