@@ -1,18 +1,28 @@
---// DeepSearch v8 - LinoriaLib (Fixed)
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/Library.lua"))()
+--// DeepSearch v8 - Orion Library Version
+local OrionLib = loadstring(game:HttpGet('https://raw.githubusercontent.com/shlexware/Orion/main/source'))()
 
-local Window = Library:CreateWindow({
-    Title = 'DeepSearch v8',
-    Center = true,
-    AutoShow = true,
+local Window = OrionLib:MakeWindow({
+    Name = "DeepSearch v8",
+    HidePremium = false,
+    SaveConfig = true,
+    ConfigFolder = "DeepSearch"
 })
 
 -- Tabs
-local Tabs = {
-    Main = Window:AddTab('Main'),
-    Logs = Window:AddTab('Logs'),
-    Settings = Window:AddTab('Settings'),
-}
+local MainTab = Window:MakeTab({
+    Name = "Main",
+    Icon = "rbxassetid://4483345998"
+})
+
+local LogsTab = Window:MakeTab({
+    Name = "Logs",
+    Icon = "rbxassetid://4483345998"
+})
+
+local SettingsTab = Window:MakeTab({
+    Name = "Settings",
+    Icon = "rbxassetid://4483345998"
+})
 
 -- Variables
 local perfMode = "normal"
@@ -21,7 +31,7 @@ local currentLogs = {}
 local WORDBANK_URL = "https://raw.githubusercontent.com/TunaCANNN/DeepSearchV8/refs/heads/main/wordbank.txt"
 
 -- Log Label
-local LogLabel = Tabs.Logs:AddLabel("No logs yet.")
+local LogLabel = LogsTab:AddLabel("No logs yet.")
 
 local function addLog(text)
     local timestamp = os.date("%H:%M:%S")
@@ -32,10 +42,10 @@ local function addLog(text)
         table.remove(currentLogs, 1)
     end
 
-    LogLabel:SetValue(table.concat(currentLogs, "\n"))
+    LogLabel:Set(table.concat(currentLogs, "\n"))
 end
 
--- Load WordBank (Only from GitHub)
+-- WordBank Loader
 local function loadWordBank()
     local success, data = pcall(function()
         return game:HttpGet(WORDBANK_URL)
@@ -48,7 +58,7 @@ local function loadWordBank()
                 table.insert(keywords, line)
             end
         end
-        addLog("Word bank loaded (" .. #keywords .. " words)")
+        addLog("Word bank loaded from GitHub (" .. #keywords .. " words)")
         return keywords
     else
         addLog("Failed to load word bank from GitHub!")
@@ -56,7 +66,7 @@ local function loadWordBank()
     end
 end
 
--- Scan Function (Uses ONLY WordBank)
+-- Scan Function (Only uses WordBank)
 local function runScan(mode)
     addLog("Starting " .. mode .. " scan...")
 
@@ -67,7 +77,7 @@ local function runScan(mode)
         return
     end
 
-    addLog("Scanning...")
+    addLog("Scanning for matches...")
 
     for _, v in ipairs(game:GetDescendants()) do
         if perfMode == "light" and math.random() > 0.5 then continue end
@@ -90,93 +100,117 @@ local function runScan(mode)
 end
 
 -- ==================== MAIN TAB ====================
-Tabs.Main:AddLeftGroupbox("Quick Scans")
+MainTab:AddSection({
+    Name = "Quick Scans"
+})
 
-Tabs.Main:AddButton({
-    Text = "Quick Scan",
-    Func = function()
+MainTab:AddButton({
+    Name = "Quick Scan",
+    Callback = function()
         runScan("quick")
     end
 })
 
-Tabs.Main:AddButton({
-    Text = "Deep Scan",
-    Func = function()
+MainTab:AddButton({
+    Name = "Deep Scan",
+    Callback = function()
         runScan("deep")
     end
 })
 
-Tabs.Main:AddButton({
-    Text = "Full Scan",
-    Func = function()
+MainTab:AddButton({
+    Name = "Full Scan",
+    Callback = function()
         runScan("full")
     end
 })
 
-Tabs.Main:AddLeftGroupbox("GitHub")
+MainTab:AddSection({
+    Name = "GitHub"
+})
 
-Tabs.Main:AddButton({
-    Text = "Reload Word Bank",
-    Func = function()
+MainTab:AddButton({
+    Name = "Reload Word Bank from GitHub",
+    Callback = function()
         loadWordBank()
     end
 })
 
 -- ==================== LOGS TAB ====================
-Tabs.Logs:AddLeftGroupbox("Log Controls")
+LogsTab:AddSection({
+    Name = "Log Controls"
+})
 
-Tabs.Logs:AddButton({
-    Text = "Copy All Logs",
-    Func = function()
+LogsTab:AddButton({
+    Name = "Copy All Logs",
+    Callback = function()
         if setclipboard then
             setclipboard(table.concat(currentLogs, "\n"))
-            Library:Notify("Logs copied to clipboard", 3)
+            OrionLib:MakeNotification({
+                Name = "Copied",
+                Content = "Logs copied to clipboard",
+                Time = 3
+            })
         else
-            Library:Notify("setclipboard not supported", 3)
+            OrionLib:MakeNotification({
+                Name = "Error",
+                Content = "setclipboard not supported",
+                Time = 3
+            })
         end
     end
 })
 
-Tabs.Logs:AddButton({
-    Text = "Clear Logs",
-    Func = function()
+LogsTab:AddButton({
+    Name = "Clear Logs",
+    Callback = function()
         currentLogs = {}
-        LogLabel:SetValue("Logs cleared.")
+        LogLabel:Set("Logs cleared.")
     end
 })
 
 -- ==================== SETTINGS TAB ====================
-Tabs.Settings:AddLeftGroupbox("General Settings")
+SettingsTab:AddSection({
+    Name = "General Settings"
+})
 
-Tabs.Settings:AddToggle("AutoSave", {
-    Text = "Auto Save Logs",
+SettingsTab:AddToggle({
+    Name = "Auto Save Logs",
     Default = true,
     Callback = function(Value)
         autoSave = Value
     end
 })
 
-Tabs.Settings:AddToggle("PerfMode", {
-    Text = "Performance Mode",
+SettingsTab:AddToggle({
+    Name = "Performance Mode",
     Default = false,
     Callback = function(Value)
         perfMode = Value and "light" or "normal"
     end
 })
 
-Tabs.Settings:AddButton({
-    Text = "Manual Save Log",
-    Func = function()
+SettingsTab:AddButton({
+    Name = "Manual Save Current Log",
+    Callback = function()
         if writefile then
             local name = "DeepSearch_Manual_" .. os.date("%Y%m%d_%H%M%S") .. ".txt"
             writefile(name, table.concat(currentLogs, "\n"))
-            Library:Notify("Log saved as " .. name, 3)
+            OrionLib:MakeNotification({
+                Name = "Saved",
+                Content = "Log saved as " .. name,
+                Time = 3
+            })
         end
     end
 })
 
--- Force select Main tab (important for LinoriaLib)
-Tabs.Main:Select()
+-- Final Notification
+OrionLib:MakeNotification({
+    Name = "DeepSearch v8",
+    Content = "Loaded successfully with Orion Library",
+    Time = 4
+})
 
-addLog("DeepSearch v8 (LinoriaLib) loaded.")
-addLog("Using only GitHub word bank for scanning.")
+addLog("DeepSearch v8 loaded (Orion Library).")
+addLog("Only using GitHub word bank for scanning.")
