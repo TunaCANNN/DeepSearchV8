@@ -1,0 +1,76 @@
+{
+  "Weapons": [
+    "Gun", "Guns", "Rifle", "Rifles", "Pistol", "Pistols", "Shotgun", "Shotguns", 
+    "Sniper", "SniperRifle", "SMG", "LMG", "Minigun", "Revolver", "Crossbow", 
+    "Bow", "Arrow", "Arrows", "Bullet", "Bullets", "Ammo", "Ammunition", 
+    "Magazine", "Clip", "Silencer", "Suppressor", "Scope", "RedDot", "Holo", 
+    "Grip", "Stock", "Barrel", "Muzzle", "Firearm", "Firearms"
+  ],
+
+  "Combat": [
+    "Damage", "Health", "HP", "Armor", "Shield", "Stamina", "Energy", 
+    "Hit", "Hitbox", "Headshot", "Kill", "Kills", "Death", "Deaths", 
+    "Killstreak", "Bleed", "Burning", "Poison", "CriticalHit"
+  ],
+
+  "Loot_Economy": [
+    "Loot", "LootDrop", "LootSpawn", "LootSpawned", "LootModels", "Chest", "Chests",
+    "Drop", "Drops", "Ore", "Ores", "Coin", "Coins", "Gem", "Gems", "Money", 
+    "Cash", "Gold", "Silver", "Token", "Tokens", "Buy", "Sell", "Shop", "Trade",
+    "Economy", "Currency", "Income", "MoneyMult", "IncomeMult", "OreMult"
+  ],
+
+  "Survival": [
+    "Hunger", "Thirst", "Stamina", "Food", "Water", "Sleep", "Temperature", 
+    "Cold", "Heat", "Radiation", "Infection", "Zombie", "Zombies", "Survivor", 
+    "Crafting", "Craft", "Recipe", "Recipes", "Campfire", "Tent", "SleepingBag",
+    "Medkit", "Bandage", "Painkiller", "FirstAid"
+  ],
+
+  "Tycoon_Base": [
+    "Tycoon", "Plot", "Plots", "Base", "Bases", "Build", "Building", "Floor", 
+    "Wall", "Walls", "Door", "Gate", "Owner", "Claim", "Upgrade", "Upgrades", 
+    "Level", "Levels", "Tier", "Tiers", "Prestige", "Rebirth"
+  ],
+
+  "UI_Buttons": [
+    "Button", "Buttons", "BuyButton", "SellButton", "MergeButton", "UpgradeButton",
+    "DepositButton", "CollectButton", "ClaimButton", "ShopButton", "Frame", 
+    "Frames", "Label", "TextButton", "ScrollingFrame", "MenuButton", "CloseButton"
+  ],
+
+  "Remotes_Events": [
+    "RemoteEvent", "RemoteFunction", "FireServer", "FireClient", "OnClientEvent", 
+    "OnServerEvent", "InvokeServer", "InvokeClient", "Remote", "Remotes", 
+    "Event", "Events", "Function", "Functions"
+  ],
+
+  "Scripts_Modules": [
+    "Script", "Scripts", "LocalScript", "ModuleScript", "Module", "Modules",
+    "BuyScript", "SellScript", "MergeScript", "UpgradeScript", "ButtonScript"
+  ],
+
+  "Player_Data": [
+    "PlayerData", "Data", "SaveData", "LoadData", "Leaderstats", "Stats", 
+    "Inventory", "Backpack", "Tool", "Tools", "Value", "IntValue", "NumberValue",
+    "StringValue", "BoolValue", "ObjectValue", "Folder", "Folders"
+  ],
+
+  "Card_Games": [
+    "Card", "Cards", "Deck", "Decks", "Hand", "Hands", "Board", "Field", 
+    "Graveyard", "Discard", "Summon", "Attack", "Health", "Cost", "Mana", 
+    "Energy", "Rarity", "CardID", "CardType", "CardData"
+  ],
+
+  "General_Useful": [
+    "Holder", "Holders", "Spawn", "SpawnPoint", "Center", "Border", "Sign", 
+    "Shelf", "TroughPart", "GamePassBoard", "GroupReward", "InstantSell",
+    "PrimaryPart", "CFrame", "Position", "Velocity", "Debris", "TweenService",
+    "Sound", "Audio", "Part", "Parts", "Model", "Models", "MeshPart", "Union"
+  ],
+
+  "AntiCheat_Security": [
+    "AntiCheat", "Security", "Validation", "Check", "Checks", "DistanceCheck",
+    "OwnerCheck", "ServerCheck", "ClientCheck"
+  ]
+}
