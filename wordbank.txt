@@ -30,3 +30,20 @@ Hitbox Hitboxes Part PartName PrimaryPart CFrame Velocity Speed Jump JumpPower W
 
 -- More Survival / Looter Shooter
 Rarity Common Uncommon Rare Epic Legendary Mythic Exotic Scrap Metal Wood Stone Cloth Leather Plastic Component Components Blueprint Blueprints Mod Mods Attachment Attachments Skin Skins Cosmetic Cosmetics
+
+
+
+Card Deck Hand Board Field Graveyard Discard Summon Battle Match Turn
+Loot Shop Buy Merge Upgrade Mining Pickaxe Holder Sell Chest Prompt
+Tool Backpack Plot Base Owner Coin Gem Money Currency Income
+ButtonBuy ButtonMerge ButtonSell UpgradeButton DepositButton
+LootSpawned LootModels Holders TroughPart OfflineIncome
+RemoteEvent RemoteFunction FireServer FireClient OnClientEvent OnServerEvent
+PromptBuy BuyScript SellScript MergeScript UpgradeScript
+CardID CardType Attack Health Cost Rarity Level Tier
+LootTier ChestTier HolderName CurrentCount
+ProximityPrompt ClickDetector TouchInterest
+Leaderstats Stats Data Folder Value IntValue NumberValue StringValue
+AutoLoot AutoMine AutoBuy AutoMerge AutoSell
+OreMult IncomeMult MoneyMult Collection CollectionFrame
+Gun Recoil ReloadTime Reload Money Spread
