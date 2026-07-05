@@ -1,74 +1,65 @@
---// DeepSearch v8 - Final Terminal UI + Keybind
+--// DeepSearch v8 - Final Complete Version
 local player = game.Players.LocalPlayer
 local HttpService = game:GetService("HttpService")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 
+-- Services & Variables
 local gui = Instance.new("ScreenGui")
 gui.Name = "DeepSearch"
 gui.ResetOnSpawn = false
 gui.Parent = (gethui and gethui()) or player:WaitForChild("PlayerGui")
 
+local currentLogs = {}
+local perfMode = "normal"
+local autoSave = true
+
 -- Main Window
 local main = Instance.new("Frame")
-main.Size = UDim2.new(0, 860, 0, 540)
-main.Position = UDim2.new(0.5, -430, 0.5, -270)
-main.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
+main.Name = "MainWindow"
+main.Size = UDim2.new(0, 880, 0, 560)
+main.Position = UDim2.new(0.5, -440, 0.5, -280)
+main.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
 main.BorderSizePixel = 0
 main.Visible = true
 main.Parent = gui
 
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 18)
-corner.Parent = main
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 16)
 
--- Title Bar (Centered + Lowered)
+-- Title Bar
 local titleBar = Instance.new("Frame")
-titleBar.Size = UDim2.new(1, 0, 0, 28)
-titleBar.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+titleBar.Size = UDim2.new(1, 0, 0, 30)
+titleBar.BackgroundColor3 = Color3.fromRGB(12, 12, 18)
 titleBar.Parent = main
 
-local titleCorner = Instance.new("UICorner")
-titleCorner.CornerRadius = UDim.new(0, 18)
-titleCorner.Parent = titleBar
+Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 16)
 
 -- Diamond Icon
 local diamond = Instance.new("Frame")
 diamond.Size = UDim2.new(0, 10, 0, 10)
-diamond.Position = UDim2.new(0.5, -120, 0.5, -5)
+diamond.Position = UDim2.new(0.5, -130, 0.5, -5)
 diamond.BackgroundColor3 = Color3.fromRGB(180, 100, 255)
 diamond.Rotation = 45
 diamond.Parent = titleBar
 
 -- Title (Centered + Lowered)
-local titleText = Instance.new("TextLabel")
-titleText.Size = UDim2.new(1, 0, 1, 0)
-titleText.BackgroundTransparency = 1
-titleText.Text = "DeepSearch v8"
-titleText.TextColor3 = Color3.fromRGB(200, 200, 220)
-titleText.TextScaled = true
-titleText.Font = Enum.Font.Code
-titleText.TextXAlignment = Enum.TextXAlignment.Center
-titleText.Parent = titleBar
-
--- Content Area
-local content = Instance.new("Frame")
-content.Size = UDim2.new(1, -16, 1, -40)
-content.Position = UDim2.new(0, 8, 0, 34)
-content.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
-content.Parent = main
-
-local contentCorner = Instance.new("UICorner")
-contentCorner.CornerRadius = UDim.new(0, 12)
-contentCorner.Parent = content
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 1, 0)
+title.BackgroundTransparency = 1
+title.Text = "DeepSearch v8"
+title.TextColor3 = Color3.fromRGB(200, 200, 220)
+title.TextScaled = true
+title.Font = Enum.Font.Code
+title.TextXAlignment = Enum.TextXAlignment.Center
+title.Parent = titleBar
 
 -- Console
 local console = Instance.new("ScrollingFrame")
-console.Size = UDim2.new(1, -160, 1, -50)
-console.Position = UDim2.new(0, 8, 0, 8)
+console.Size = UDim2.new(1, -160, 1, -55)
+console.Position = UDim2.new(0, 150, 0, 38)
 console.BackgroundColor3 = Color3.fromRGB(10, 10, 14)
 console.ScrollBarThickness = 5
-console.Parent = content
+console.Parent = main
 
 local output = Instance.new("TextLabel")
 output.Size = UDim2.new(1, -8, 1, 0)
@@ -81,6 +72,26 @@ output.TextSize = 13
 output.TextWrapped = true
 output.Parent = console
 
+-- Sidebar
+local sidebar = Instance.new("Frame")
+sidebar.Size = UDim2.new(0, 140, 1, -38)
+sidebar.Position = UDim2.new(0, 6, 0, 36)
+sidebar.BackgroundColor3 = Color3.fromRGB(15, 8, 25)
+sidebar.Parent = main
+
+-- Command Bar
+local cmdBar = Instance.new("TextBox")
+cmdBar.Size = UDim2.new(1, -160, 0, 26)
+cmdBar.Position = UDim2.new(0, 150, 1, -30)
+cmdBar.BackgroundColor3 = Color3.fromRGB(12, 8, 20)
+cmdBar.TextColor3 = Color3.fromRGB(200, 150, 255)
+cmdBar.PlaceholderText = "Type commands..."
+cmdBar.Font = Enum.Font.Code
+cmdBar.TextSize = 13
+cmdBar.ClearTextOnFocus = false
+cmdBar.Parent = main
+
+-- Variables
 local currentLogs = {}
 local perfMode = "normal"
 local autoSave = true
@@ -104,79 +115,60 @@ local function loadWordBank()
 
     if success and data then
         local decoded = HttpService:JSONDecode(data)
-        log("Word bank loaded ("..#decoded.." categories)")
-        return decoded
+        local keywords = {}
+        for _, list in pairs(decoded) do
+            for _, word in ipairs(list) do
+                table.insert(keywords, word)
+            end
+        end
+        log("Word bank loaded (" .. #keywords .. " words)")
+        return keywords
     else
         log("Failed to load word bank!")
         return {}
     end
 end
 
--- Category Scan
-local function scanCategory(category)
-    local wordbank = loadWordBank()
-    if not wordbank[category] then
-        log("Category not found: "..category)
+-- Scanning
+local function runScan(mode)
+    log("Starting " .. mode .. " scan...")
+    local keywords = loadWordBank()
+
+    if #keywords == 0 then
+        log("No keywords loaded.")
         return
     end
 
-    log("Scanning: "..category)
-    local keywords = wordbank[category]
     local found = 0
-
     for _, v in ipairs(game:GetDescendants()) do
         if perfMode == "light" and math.random() > 0.5 then continue end
 
         for _, kw in ipairs(keywords) do
             if string.find(v.Name, kw) and not string.find(v:GetFullName(), "CoreGui") then
-                log("→ "..v:GetFullName())
+                log("→ " .. v:GetFullName())
                 found += 1
                 break
             end
         end
     end
 
-    log("Found "..found.." matches in "..category)
-end
+    log("Scan complete. Found " .. found .. " matches.")
 
--- Full Scan
-local function runFullScan()
-    local wordbank = loadWordBank()
-    log("Starting full scan...")
-
-    local total = 0
-    for category, keywords in pairs(wordbank) do
-        for _, v in ipairs(game:GetDescendants()) do
-            if perfMode == "light" and math.random() > 0.5 then continue end
-
-            for _, kw in ipairs(keywords) do
-                if string.find(v.Name, kw) and not string.find(v:GetFullName(), "CoreGui") then
-                    log("→ "..v:GetFullName())
-                    total += 1
-                    break
-                end
-            end
-        end
+    if autoSave and writefile then
+        local name = "DeepSearch_" .. os.date("%Y%m%d_%H%M%S") .. ".txt"
+        writefile(name, table.concat(currentLogs, "\n"))
+        log("Log saved: " .. name)
     end
-
-    log("Full scan complete. Total: "..total)
 end
 
--- Keybind (RightShift to toggle UI)
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed then return end
+-- Keybind (RightShift)
+UserInputService.InputBegan:Connect(function(input)
     if input.KeyCode == Enum.KeyCode.RightShift then
         main.Visible = not main.Visible
     end
 end)
 
--- Sidebar Buttons
-local sidebar = Instance.new("Frame")
-sidebar.Size = UDim2.new(0, 140, 1, -40)
-sidebar.Position = UDim2.new(0, 8, 0, 36)
-sidebar.BackgroundColor3 = Color3.fromRGB(15, 8, 25)
-sidebar.Parent = content
-
+-- Button Creator
 local function createButton(text, yPos, callback)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, -10, 0, 30)
@@ -215,15 +207,11 @@ local function createButton(text, yPos, callback)
     end)
 end
 
--- Buttons
+-- Sidebar Buttons
 local y = 8
-createButton("Quick Scan", y, function() runFullScan() end); y += 34
-createButton("Deep Scan", y, function() runFullScan() end); y += 34
-createButton("Full Scan", y, function() runFullScan() end); y += 34
-createButton("Weapons", y, function() scanCategory("Weapons") end); y += 34
-createButton("Loot", y, function() scanCategory("Loot_Economy") end); y += 34
-createButton("Economy", y, function() scanCategory("Loot_Economy") end); y += 34
-createButton("Survival", y, function() scanCategory("Survival") end); y += 34
+createButton("Quick Scan", y, function() runScan("quick") end); y += 34
+createButton("Deep Scan", y, function() runScan("deep") end); y += 34
+createButton("Full Scan", y, function() runScan("full") end); y += 34
 createButton("Copy Logs", y, function()
     if setclipboard then
         setclipboard(table.concat(currentLogs, "\n"))
@@ -235,7 +223,31 @@ end); y += 34
 createButton("Clear Logs", y, function()
     currentLogs = {}
     output.Text = ""
+    log("Logs cleared")
+end); y += 34
+createButton("Exit", y, function() gui:Destroy() end)
+
+-- Command Bar
+cmdBar.FocusLost:Connect(function(enter)
+    if not enter then return end
+    local input = string.lower(cmdBar.Text)
+    cmdBar.Text = ""
+
+    if input == "scan" or input == "quick" then runScan("quick")
+    elseif input == "deep" then runScan("deep")
+    elseif input == "full" then runScan("full")
+    elseif input == "perf" then
+        perfMode = (perfMode == "normal") and "light" or "normal"
+        log("Performance mode: " .. perfMode)
+    elseif input == "clear" then
+        currentLogs = {}
+        output.Text = ""
+    elseif input == "exit" then
+        gui:Destroy()
+    else
+        log("Unknown command")
+    end
 end)
 
-log("DeepSearch v8 loaded.")
+log("DeepSearch v8 loaded successfully.")
 log("Press RightShift to hide/show UI.")
